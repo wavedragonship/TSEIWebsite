@@ -3,48 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Investor Portal - Login</title>
-    <link rel="stylesheet" href="style.css"> <!-- Your custom styling -->
-    <!-- Load the Supabase JS Library -->
+    <title>Member Portal | TSE Investments LLC</title>
+    <!-- Include Supabase Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); padding: 20px; color: #333; }
+        .auth-card { background: #ffffff; padding: 40px 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); width: 100%; max-width: 400px; text-align: center; }
+        .brand-title { font-size: 24px; font-weight: bold; color: #0f2027; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .brand-subtitle { font-size: 14px; color: #666; margin-bottom: 30px; }
+        .form-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #203a43; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #555; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+        .form-group input:focus { border-color: #2c5364; outline: none; }
+        .btn-submit { width: 100%; padding: 12px; background: #203a43; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+        .btn-submit:hover { background: #0f2027; }
+        .message-box { margin-top: 15px; font-size: 14px; min-height: 20px; font-weight: 500; }
+        .toggle-text { margin-top: 25px; font-size: 14px; color: #666; border-top: 1px solid #eee; padding-top: 20px; }
+        .toggle-text a { color: #2c5364; font-weight: bold; text-decoration: none; cursor: pointer; }
+        .toggle-text a:hover { text-decoration: underline; }
+        .hidden { display: none; }
+    </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>Equity Portal Login</h2>
+
+<div class="auth-card">
+    <div class="brand-title">TSE Investments</div>
+    <div class="brand-subtitle">Private Member Portal</div>
+    
+    <!-- ================= LOGIN VIEW ================= -->
+    <div id="login-view">
+        <div class="form-title">Welcome Back</div>
         <form id="login-form">
-            <input type="email" id="email" placeholder="Investor Email" required>
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Sign In</button>
+            <div class="form-group">
+                <label for="login-email">Email Address</label>
+                <input type="email" id="login-email" required placeholder="name@example.com">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn-submit">Log In</button>
         </form>
-        <p id="error-msg" style="color: red;"></p>
+        <div class="toggle-text">
+            Don't have an account? <a onclick="toggleViews()">Create one here</a>
+        </div>
     </div>
 
-    <script>
-        // Initialize Supabase (We will get these keys in Step 2)
-        const SUPABASE_URL = "https://ukythwzqpiqrztnbpqtm.supabase.co";
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVreXRod3pxcGlxcnp0bmJwcXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MDE1ODcsImV4cCI6MjA5NTA3NzU4N30.nan3Z8c7FxWzJEXB8I4G6PMQgN5dLAXWMe6FXvpcMqc";
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    <!-- ================= SIGNUP VIEW ================= -->
+    <div id="signup-view" class="hidden">
+        <div class="form-title">Apply for Membership</div>
+        <form id="signup-form">
+            <div class="form-group">
+                <label for="signup-email">Email Address</label>
+                <input type="email" id="signup-email" required placeholder="name@example.com">
+            </div>
+            <div class="form-group">
+                <label for="signup-password">Choose Password</label>
+                <input type="password" id="signup-password" required placeholder="Minimum 6 characters">
+            </div>
+            <button type="submit" class="btn-submit">Register Account</button>
+        </form>
+        <div class="toggle-text">
+            Already a member? <a onclick="toggleViews()">Log in here</a>
+        </div>
+    </div>
 
-        // Handle Form Submission
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('error-msg');
+    <!-- Shared status message box -->
+    <div id="message-box" class="message-box"></div>
+</div>
 
-            // Authenticate user against your secure database
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password,
-            });
+<script>
+    // 1. Configure your Supabase credentials
+    const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_PUBLIC_KEY";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            if (error) {
-                errorMsg.innerText = error.message;
-            } else {
-                // If login succeeds, send them to the secure dashboard
-                window.location.href = '/dashboard.html';
-            }
-        });
-    </script>
+    const messageBox = document.getElementById('message-box');
+
+    // Toggle between Login and Signup built-in views
+    function toggleViews() {
+        document.getElementById('login-view').classList.toggle('hidden');
+        document.getElementById('signup-view').classList.toggle('hidden');
+        messageBox.innerText = ""; // Clear errors on toggle
+    }
+
+    // 2. Handle Login Submission
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        
+        messageBox.innerText = "Verifying credentials...";
+        messageBox.style.color = "#203a43";
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            messageBox.innerText = "Login Failed: " + error.message;
+            messageBox.style.color = "#d9534f";
+        } else {
+            messageBox.innerText = "Access Granted! Redirecting...";
+            messageBox.style.color = "#5cb85c";
+            window.location.href = "dashboard.html";
+        }
+    });
+
+    // 3. Handle Signup Submission
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        
+        messageBox.innerText = "Creating secure account...";
+        messageBox.style.color = "#203a43";
+
+        const { data, error } = await supabase.auth.signUp({ email, password });
+
+        if (error) {
+            messageBox.innerText = "Registration Error: " + error.message;
+            messageBox.style.color = "#d9534f";
+        } else {
+            messageBox.innerText = "Success! Please check your email to confirm membership.";
+            messageBox.style.color = "#5cb85c";
+            document.getElementById('signup-form').reset();
+        }
+    });
+</script>
+
 </body>
 </html>
