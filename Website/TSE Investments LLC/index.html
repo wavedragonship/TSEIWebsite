@@ -86,243 +86,125 @@
 </div>
 
 <script>
-
     // 1. Configure your Supabase credentials
-
     const SUPABASE_URL = "https://ukythwzqpiqrztnbpqtm.supabase.co";
-
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVreXRod3pxcGlxcnp0bmJwcXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MDE1ODcsImV4cCI6MjA5NTA3NzU4N30.nan3Z8c7FxWzJEXB8I4G6PMQgN5dLAXWMe6FXvpcMqcY";
-
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-
+    
+    // FIXED: Changed lowercase 'supabase.createClient' to uppercase 'Supabase.createClient'
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const messageBox = document.getElementById('message-box');
 
-
-
     function showMessage(text, type) {
-
         messageBox.innerText = text;
-
         messageBox.className = "message-box msg-" + type; // Applies formatting dynamically
-
     }
-
-
 
     function clearMessage() {
-
         messageBox.innerText = "";
-
         messageBox.className = "message-box";
-
     }
-
-
 
     function toggleViews() {
-
         document.getElementById('login-view').classList.toggle('hidden');
-
         document.getElementById('signup-view').classList.toggle('hidden');
-
         clearMessage();
-
         
-
         // Clean up visual error borders if switching views
-
         document.querySelectorAll('input').forEach(input => input.classList.remove('input-error'));
-
     }
-
-
 
     // Frontend validation checking password structure
-
     function validatePasswordStrength(password) {
-
         if (password.length < 8) return "Password must be at least 8 characters long.";
-
         if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter.";
-
         if (!/[0-9]/.test(password)) return "Password must contain at least one number.";
-
         return null; // Passes validation
-
     }
 
-
-
     // 2. Handle Login Submission
-
     document.getElementById('login-form').addEventListener('submit', async (e) => {
-
         e.preventDefault();
-
         clearMessage();
-
         
-
         const emailInput = document.getElementById('login-email');
-
         const passwordInput = document.getElementById('login-password');
-
         
-
         emailInput.classList.remove('input-error');
-
         passwordInput.classList.remove('input-error');
-
-
 
         showMessage("Verifying identity...", "info");
 
-
-
         const { data, error } = await supabase.auth.signInWithPassword({ 
-
             email: emailInput.value.trim(), 
-
             password: passwordInput.value 
-
         });
 
-
-
         if (error) {
-
             // Translate robotic Supabase errors into human speak
-
             let friendlyError = error.message;
-
             
-
             if (error.status === 400 || error.message.toLowerCase().includes("invalid credentials")) {
-
                 friendlyError = "The email or password you entered is incorrect. Please check your credentials and try again.";
-
                 emailInput.classList.add('input-error');
-
                 passwordInput.classList.add('input-error');
-
             } else if (error.message.toLowerCase().includes("email not confirmed")) {
-
                 friendlyError = "Your email address hasn't been verified yet. Please check your inbox for the activation link.";
-
             }
-
             
-
             showMessage(friendlyError, "error");
-
         } else {
-
             showMessage("Access Granted! Opening dashboard...", "success");
-
             setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
-
         }
-
     });
 
-
-
     // 3. Handle Signup Submission
-
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
-
         e.preventDefault();
-
         clearMessage();
-
         
-
         const emailInput = document.getElementById('signup-email');
-
         const passwordInput = document.getElementById('signup-password');
-
         
-
         emailInput.classList.remove('input-error');
-
         passwordInput.classList.remove('input-error');
 
-
-
         // Run password safety rules before bothering the database
-
         const passwordIssue = validatePasswordStrength(passwordInput.value);
-
         if (passwordIssue) {
-
             showMessage(passwordIssue, "error");
-
             passwordInput.classList.add('input-error');
-
             return;
-
         }
-
-
 
         showMessage("Securing your membership profile...", "info");
 
-
-
         const { data, error } = await supabase.auth.signUp({ 
-
             email: emailInput.value.trim(), 
-
             password: passwordInput.value 
-
         });
 
-
-
         if (error) {
-
             let friendlyError = error.message;
-
             if (error.message.toLowerCase().includes("already registered")) {
-
                 friendlyError = "An account with this email address already exists. Try logging in instead.";
-
                 emailInput.classList.add('input-error');
-
             }
-
             showMessage(friendlyError, "error");
-
         } else {
-
             // If email confirmation is ON in Supabase:
-
             if (data.user && data.session === null) {
-
                 showMessage("Account reserved! We sent a confirmation link to your email. Please verify it to activate your membership.", "success");
-
             } else {
-
                 // If email confirmation is OFF in Supabase:
-
                 showMessage("Account successfully created! Redirecting you straight to your dashboard...", "success");
-
                 setTimeout(() => { window.location.href = "dashboard.html"; }, 1500);
-
             }
-
             document.getElementById('signup-form').reset();
-
         }
-
     });
-
 </script>
 
-
-
 </body>
-
 </html>
