@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Member Portal | TSE Investments LLC</title>
-    <!-- Include Supabase Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -15,11 +14,22 @@
         .form-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: #203a43; }
         .form-group { margin-bottom: 20px; text-align: left; }
         .form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: #555; }
-        .form-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+        .form-group input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; transition: all 0.2s; }
         .form-group input:focus { border-color: #2c5364; outline: none; }
+        
+        /* Validation Styling Helper */
+        .input-error { border-color: #d9534f !important; background-color: #fff8f8; }
+        .validation-note { font-size: 11px; color: #666; margin-top: 4px; line-height: 1.4; }
+        
         .btn-submit { width: 100%; padding: 12px; background: #203a43; color: white; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
         .btn-submit:hover { background: #0f2027; }
-        .message-box { margin-top: 15px; font-size: 14px; min-height: 20px; font-weight: 500; }
+        
+        /* Enhanced Alert Message Boxes */
+        .message-box { margin-top: 15px; font-size: 13px; min-height: 20px; font-weight: 500; padding: 10px; border-radius: 6px; display: none; line-height: 1.4; text-align: left; }
+        .msg-info { display: block; background: #eef2f5; color: #203a43; border-left: 4px solid #203a43; }
+        .msg-error { display: block; background: #fdf2f2; color: #d9534f; border-left: 4px solid #d9534f; }
+        .msg-success { display: block; background: #f2fbf2; color: #5cb85c; border-left: 4px solid #5cb85c; }
+        
         .toggle-text { margin-top: 25px; font-size: 14px; color: #666; border-top: 1px solid #eee; padding-top: 20px; }
         .toggle-text a { color: #2c5364; font-weight: bold; text-decoration: none; cursor: pointer; }
         .toggle-text a:hover { text-decoration: underline; }
@@ -31,6 +41,9 @@
 <div class="auth-card">
     <div class="brand-title">TSE Investments</div>
     <div class="brand-subtitle">Private Member Portal</div>
+    
+    <!-- Shared alert message box placed clearly at the top of forms -->
+    <div id="message-box" class="message-box"></div>
     
     <!-- ================= LOGIN VIEW ================= -->
     <div id="login-view">
@@ -46,9 +59,9 @@
             </div>
             <button type="submit" class="btn-submit">Log In</button>
         </form>
-<div class="toggle-text">
-    Don't have an account? <a href="#" onclick="event.preventDefault(); toggleViews();">Create one here</a>
-</div>
+        <div class="toggle-text">
+            Don't have an account? <a href="#" onclick="event.preventDefault(); toggleViews();">Create one here</a>
+        </div>
     </div>
 
     <!-- ================= SIGNUP VIEW ================= -->
@@ -61,72 +74,131 @@
             </div>
             <div class="form-group">
                 <label for="signup-password">Choose Password</label>
-                <input type="password" id="signup-password" required placeholder="Minimum 6 characters">
+                <input type="password" id="signup-password" required placeholder="Create a password">
+                <div class="validation-note">Must be at least 8 characters, contain 1 uppercase letter, and 1 number.</div>
             </div>
             <button type="submit" class="btn-submit">Register Account</button>
         </form>
-<div class="toggle-text">
-    Already a member? <a href="#" onclick="event.preventDefault(); toggleViews();">Log in here</a>
-</div>
+        <div class="toggle-text">
+            Already a member? <a href="#" onclick="event.preventDefault(); toggleViews();">Log in here</a>
+        </div>
     </div>
-
-    <!-- Shared status message box -->
-    <div id="message-box" class="message-box"></div>
 </div>
 
 <script>
     // 1. Configure your Supabase credentials
-    const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
-    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_PUBLIC_KEY";
+    const SUPABASE_URL = "https://ukythwzqpiqrztnbpqtm.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVreXRod3pxcGlxcnp0bmJwcXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MDE1ODcsImV4cCI6MjA5NTA3NzU4N30.nan3Z8c7FxWzJEXB8I4G6PMQgN5dLAXWMe6FXvpcMqcY";
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const messageBox = document.getElementById('message-box');
 
-    // Toggle between Login and Signup built-in views
+    function showMessage(text, type) {
+        messageBox.innerText = text;
+        messageBox.className = "message-box msg-" + type; // Applies formatting dynamically
+    }
+
+    function clearMessage() {
+        messageBox.innerText = "";
+        messageBox.className = "message-box";
+    }
+
     function toggleViews() {
         document.getElementById('login-view').classList.toggle('hidden');
         document.getElementById('signup-view').classList.toggle('hidden');
-        messageBox.innerText = ""; // Clear errors on toggle
+        clearMessage();
+        
+        // Clean up visual error borders if switching views
+        document.querySelectorAll('input').forEach(input => input.classList.remove('input-error'));
+    }
+
+    // Frontend validation checking password structure
+    function validatePasswordStrength(password) {
+        if (password.length < 8) return "Password must be at least 8 characters long.";
+        if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter.";
+        if (!/[0-9]/.test(password)) return "Password must contain at least one number.";
+        return null; // Passes validation
     }
 
     // 2. Handle Login Submission
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+        clearMessage();
         
-        messageBox.innerText = "Verifying credentials...";
-        messageBox.style.color = "#203a43";
+        const emailInput = document.getElementById('login-email');
+        const passwordInput = document.getElementById('login-password');
+        
+        emailInput.classList.remove('input-error');
+        passwordInput.classList.remove('input-error');
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        showMessage("Verifying identity...", "info");
+
+        const { data, error } = await supabase.auth.signInWithPassword({ 
+            email: emailInput.value.trim(), 
+            password: passwordInput.value 
+        });
 
         if (error) {
-            messageBox.innerText = "Login Failed: " + error.message;
-            messageBox.style.color = "#d9534f";
+            // Translate robotic Supabase errors into human speak
+            let friendlyError = error.message;
+            
+            if (error.status === 400 || error.message.toLowerCase().includes("invalid credentials")) {
+                friendlyError = "The email or password you entered is incorrect. Please check your credentials and try again.";
+                emailInput.classList.add('input-error');
+                passwordInput.classList.add('input-error');
+            } else if (error.message.toLowerCase().includes("email not confirmed")) {
+                friendlyError = "Your email address hasn't been verified yet. Please check your inbox for the activation link.";
+            }
+            
+            showMessage(friendlyError, "error");
         } else {
-            messageBox.innerText = "Access Granted! Redirecting...";
-            messageBox.style.color = "#5cb85c";
-            window.location.href = "dashboard.html";
+            showMessage("Access Granted! Opening dashboard...", "success");
+            setTimeout(() => { window.location.href = "dashboard.html"; }, 1000);
         }
     });
 
     // 3. Handle Signup Submission
     document.getElementById('signup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('signup-email').value;
-        const password = document.getElementById('signup-password').value;
+        clearMessage();
         
-        messageBox.innerText = "Creating secure account...";
-        messageBox.style.color = "#203a43";
+        const emailInput = document.getElementById('signup-email');
+        const passwordInput = document.getElementById('signup-password');
+        
+        emailInput.classList.remove('input-error');
+        passwordInput.classList.remove('input-error');
 
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        // Run password safety rules before bothering the database
+        const passwordIssue = validatePasswordStrength(passwordInput.value);
+        if (passwordIssue) {
+            showMessage(passwordIssue, "error");
+            passwordInput.classList.add('input-error');
+            return;
+        }
+
+        showMessage("Securing your membership profile...", "info");
+
+        const { data, error } = await supabase.auth.signUp({ 
+            email: emailInput.value.trim(), 
+            password: passwordInput.value 
+        });
 
         if (error) {
-            messageBox.innerText = "Registration Error: " + error.message;
-            messageBox.style.color = "#d9534f";
+            let friendlyError = error.message;
+            if (error.message.toLowerCase().includes("already registered")) {
+                friendlyError = "An account with this email address already exists. Try logging in instead.";
+                emailInput.classList.add('input-error');
+            }
+            showMessage(friendlyError, "error");
         } else {
-            messageBox.innerText = "Success! Please check your email to confirm membership.";
-            messageBox.style.color = "#5cb85c";
+            // If email confirmation is ON in Supabase:
+            if (data.user && data.session === null) {
+                showMessage("Account reserved! We sent a confirmation link to your email. Please verify it to activate your membership.", "success");
+            } else {
+                // If email confirmation is OFF in Supabase:
+                showMessage("Account successfully created! Redirecting you straight to your dashboard...", "success");
+                setTimeout(() => { window.location.href = "dashboard.html"; }, 1500);
+            }
             document.getElementById('signup-form').reset();
         }
     });
